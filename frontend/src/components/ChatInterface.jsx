@@ -101,33 +101,37 @@ const ChatInterface = forwardRef(({ activeChatId }, ref) => {
         <div className="flex flex-col h-full">
             
             {/* Chat Area - Takes available space */}
+            {/* Chat Area - Takes available space */}
             <div className="flex-1 overflow-y-auto scroll-smooth pl-2" style={{ direction: 'rtl' }}>
                 <div className="min-h-full flex flex-col space-y-6 pb-4 pr-2" style={{ direction: 'ltr' }}>
                     {messages.length === 0 && !loading && (
                         <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50 animate-in fade-in duration-500">
-                            <Sparkles className="w-16 h-16 text-slate-300 mb-4" />
-                            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
+                            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+                                <Sparkles className="w-8 h-8 text-slate-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                                 {activeChatId ? "Start conversation..." : "Select or create a chat"}
                             </h3>
+                            <p className="text-slate-500 max-w-sm mt-2">
+                                Ask me anything about your documents. I'm here to help.
+                            </p>
                         </div>
                     )}
 
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                             {/* Avatar */}
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
-                                msg.role === 'user' 
-                                ? 'bg-indigo-600 dark:bg-indigo-500' 
-                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
-                            }`}>
-                                {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Sparkles className="w-4 h-4 text-indigo-500" />}
-                            </div>
+                            {msg.role !== 'user' && (
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center flex-shrink-0">
+                                    <Sparkles className="w-4 h-4 text-black dark:text-white" />
+                                </div>
+                            )}
 
                             {/* Bubble */}
-                            <div className={`max-w-[85%] rounded-2xl px-5 py-3.5 shadow-sm text-sm leading-relaxed ${
+                            <div className={`max-w-[85%] rounded-2xl px-6 py-4 text-[15px] leading-relaxed shadow-sm ${
                                 msg.role === 'user' 
-                                ? 'bg-indigo-600 dark:bg-indigo-600 text-white rounded-tr-none' 
-                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none'
+                                ? 'bg-black text-white rounded-tr-sm' 
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-sm'
                             }`}>
                                 {msg.text}
                             </div>
@@ -136,13 +140,13 @@ const ChatInterface = forwardRef(({ activeChatId }, ref) => {
 
                     {loading && (
                         <div className="flex gap-4">
-                             <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
-                                <Sparkles className="w-4 h-4 text-indigo-500" />
+                             <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center flex-shrink-0">
+                                <Sparkles className="w-4 h-4 text-black dark:text-white" />
                             </div>
-                            <div className="bg-white dark:bg-slate-800 px-5 py-4 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
-                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-75"></span>
-                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-150"></span>
+                            <div className="bg-slate-100 dark:bg-slate-800 px-6 py-4 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-75"></span>
+                                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-150"></span>
                             </div>
                         </div>
                     )}
@@ -152,26 +156,26 @@ const ChatInterface = forwardRef(({ activeChatId }, ref) => {
 
             {/* Input Area - Floating at bottom */}
             {activeChatId && (
-                <div className="sticky bottom-0 pt-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent dark:from-slate-950 dark:via-slate-950 pb-2">
-                    <div className="flex gap-2 items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 shadow-lg ring-1 ring-slate-900/5 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
+                <div className="sticky bottom-0 bg-white dark:bg-slate-950 px-4 py-6">
+                    <div className="flex gap-2 items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-2 py-2 shadow-xl hover:shadow-2xl transition-shadow w-full max-w-3xl mx-auto">
                         <input 
                             type="text" 
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={handleKeyPress}
                             placeholder="Message Chatify..."
-                            className="flex-1 bg-transparent border-none focus:outline-none text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 text-base"
+                            className="flex-1 bg-transparent border-none focus:outline-none text-slate-900 dark:text-slate-100 placeholder-slate-400 px-4 text-base h-10"
                         />
                         <button 
                             onClick={handleSend}
                             disabled={loading || !query.trim()}
-                            className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-3 bg-black hover:bg-slate-800 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                         >
                             <Send className="w-4 h-4" />
                         </button>
                     </div>
-                    <div className="flex justify-center mt-2 gap-4 text-[10px] text-slate-400 dark:text-slate-600 font-medium">
-                        <span className="flex items-center gap-1">AI can make mistakes. Please verify important information.</span>
+                    <div className="flex justify-center mt-3 gap-4 text-[11px] text-slate-400 font-medium">
+                        <span>Chatify can make mistakes. Check important info.</span>
                     </div>
                 </div>
             )}
