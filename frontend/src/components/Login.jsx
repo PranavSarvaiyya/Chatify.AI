@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, ArrowRight, Sparkles } from 'lucide-react';
+import logo from '../assets/logo.png';
+import illustration from '../assets/auth-illustration.png';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -28,63 +29,69 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 font-sans transition-colors">
-      <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100 dark:border-slate-800">
-        <div className="flex justify-center mb-6">
-            <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
-                <Sparkles className="text-indigo-600 dark:text-indigo-400 w-6 h-6" />
-            </div>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-white p-4 font-sans">
+      <div className="w-full max-w-5xl bg-white rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-2xl border border-slate-100">
         
-        <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-white mb-2">Welcome Back</h2>
-        <p className="text-slate-500 dark:text-slate-400 text-center mb-8">Sign in to continue your research</p>
-
-        {error && <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg mb-4 text-sm text-center">{error}</div>}
-
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Username</label>
-            <div className="relative">
-                <Mail className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
-                <input
-                  type="text"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 outline-none transition-all"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-            </div>
+        {/* Left Side - Form */}
+        <div className="w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center">
+          <div className="mb-10">
+            <img src={logo} alt="Logo" className="h-10 w-auto" />
           </div>
+
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back!</h1>
+          <p className="text-slate-500 mb-8">Simplify your workflow and boost your productivity with Chatify.AI. Get started for free.</p>
+
+          {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center">{error}</div>}
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <input
+                type="text"
+                className="w-full px-5 py-3.5 rounded-full border border-slate-200 text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all placeholder:text-slate-400 bg-white"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div>
+              <input
+                type="password"
+                className="w-full px-5 py-3.5 rounded-full border border-slate-200 text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all placeholder:text-slate-400 bg-white"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-black hover:bg-slate-900 text-white font-medium py-3.5 rounded-full transition-all shadow-lg hover:shadow-xl mt-4"
+            >
+              Login
+            </button>
+          </form>
           
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-            <div className="relative">
-                <Lock className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
-                <input
-                  type="password"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 outline-none transition-all"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-            </div>
+          <div className="mt-8 text-center text-sm text-slate-500">
+              Not a member?{' '}
+              <Link to="/signup" className="text-green-500 font-medium hover:underline">
+                  Register now
+              </Link>
           </div>
+        </div>
 
-          <button
-            type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg hover:shadow-indigo-500/30 flex items-center justify-center gap-2"
-          >
-            Sign In <ArrowRight className="w-5 h-5" />
-          </button>
-        </form>
-        
-        <div className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">
-                Sign up
-            </Link>
+        {/* Right Side - Illustration */}
+        <div className="hidden md:flex w-full md:w-1/2 bg-slate-50 p-12 items-center justify-center relative overflow-hidden">
+             <img 
+                src={illustration} 
+                alt="Illustration" 
+                className="relative z-10 w-full max-w-sm object-contain transform hover:scale-105 transition-transform duration-500" 
+             />
+             
+             {/* Decorative Elements matching the style */}
+             <div className="absolute top-10 right-10 text-slate-900 text-4xl">✨</div>
         </div>
       </div>
     </div>
