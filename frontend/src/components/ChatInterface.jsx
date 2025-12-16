@@ -101,51 +101,53 @@ const ChatInterface = forwardRef(({ activeChatId }, ref) => {
         <div className="flex flex-col h-full">
             
             {/* Chat Area - Takes available space */}
-            <div className="flex-1 overflow-y-auto space-y-6 pb-4 scroll-smooth pr-2">
-                {messages.length === 0 && !loading && (
-                     <div className="flex flex-col items-center justify-center h-full text-center opacity-50 animate-in fade-in duration-500">
-                        <Sparkles className="w-16 h-16 text-slate-300 mb-4" />
-                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
-                            {activeChatId ? "Start conversation..." : "Select or create a chat"}
-                        </h3>
-                     </div>
-                )}
+            <div className="flex-1 overflow-y-auto scroll-smooth pl-2" style={{ direction: 'rtl' }}>
+                <div className="min-h-full flex flex-col space-y-6 pb-4 pr-2" style={{ direction: 'ltr' }}>
+                    {messages.length === 0 && !loading && (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50 animate-in fade-in duration-500">
+                            <Sparkles className="w-16 h-16 text-slate-300 mb-4" />
+                            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">
+                                {activeChatId ? "Start conversation..." : "Select or create a chat"}
+                            </h3>
+                        </div>
+                    )}
 
-                {messages.map((msg, index) => (
-                    <div key={index} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                        {/* Avatar */}
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
-                            msg.role === 'user' 
-                            ? 'bg-indigo-600 dark:bg-indigo-500' 
-                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
-                        }`}>
-                            {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Sparkles className="w-4 h-4 text-indigo-500" />}
-                        </div>
+                    {messages.map((msg, index) => (
+                        <div key={index} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                            {/* Avatar */}
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
+                                msg.role === 'user' 
+                                ? 'bg-indigo-600 dark:bg-indigo-500' 
+                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
+                            }`}>
+                                {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Sparkles className="w-4 h-4 text-indigo-500" />}
+                            </div>
 
-                        {/* Bubble */}
-                        <div className={`max-w-[85%] rounded-2xl px-5 py-3.5 shadow-sm text-sm leading-relaxed ${
-                            msg.role === 'user' 
-                            ? 'bg-indigo-600 dark:bg-indigo-600 text-white rounded-tr-none' 
-                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none'
-                        }`}>
-                            {msg.text}
+                            {/* Bubble */}
+                            <div className={`max-w-[85%] rounded-2xl px-5 py-3.5 shadow-sm text-sm leading-relaxed ${
+                                msg.role === 'user' 
+                                ? 'bg-indigo-600 dark:bg-indigo-600 text-white rounded-tr-none' 
+                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none'
+                            }`}>
+                                {msg.text}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
 
-                {loading && (
-                    <div className="flex gap-4">
-                         <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
-                            <Sparkles className="w-4 h-4 text-indigo-500" />
+                    {loading && (
+                        <div className="flex gap-4">
+                             <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
+                                <Sparkles className="w-4 h-4 text-indigo-500" />
+                            </div>
+                            <div className="bg-white dark:bg-slate-800 px-5 py-4 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
+                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-75"></span>
+                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-150"></span>
+                            </div>
                         </div>
-                        <div className="bg-white dark:bg-slate-800 px-5 py-4 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
-                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-75"></span>
-                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-150"></span>
-                        </div>
-                    </div>
-                )}
-                <div ref={messagesEndRef} />
+                    )}
+                    <div ref={messagesEndRef} />
+                </div>
             </div>
 
             {/* Input Area - Floating at bottom */}
