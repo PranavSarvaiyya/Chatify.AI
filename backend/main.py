@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, status
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -66,6 +66,16 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"message": "ChatWithData API is running with MongoDB 🍃"}
+
+# Render and some proxies may send HEAD / for health checks
+@app.head("/")
+def head_root():
+    return Response(status_code=200)
+
+# Browsers often request this; returning 204 avoids noisy 404s in DevTools
+@app.get("/favicon.ico")
+def favicon():
+    return Response(status_code=204)
 
 # --- AUTH ROUTES ---
 @app.post("/token", response_model=Token)
