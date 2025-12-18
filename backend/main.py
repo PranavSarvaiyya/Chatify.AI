@@ -6,6 +6,9 @@ from typing import Optional, List
 from datetime import timedelta, datetime
 from bson import ObjectId
 
+# Env helpers
+import os
+
 # Handle imports whether running directly or as module
 try:
     from backend.rag_service import rag_service
@@ -30,6 +33,13 @@ except ImportError:
 
 app = FastAPI()
 
+# CORS origins from env (comma-separated). Default keeps current dev behavior.
+_cors_origins_env = os.environ.get("CORS_ORIGINS", "*").strip()
+if _cors_origins_env == "*" or _cors_origins_env == "":
+    ALLOW_ORIGINS = ["*"]
+else:
+    ALLOW_ORIGINS = [o.strip().rstrip("/") for o in _cors_origins_env.split(",") if o.strip()]
+
 # Input Models
 class QueryRequest(BaseModel):
     query: str
@@ -47,7 +57,7 @@ class ChatHistoryItem(BaseModel):
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOW_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

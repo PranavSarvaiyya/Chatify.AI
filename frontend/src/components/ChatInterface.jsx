@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import axios from 'axios';
 import { Send, Sparkles, User, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/api';
 
 const ChatInterface = forwardRef(({ activeChatId }, ref) => {
     const [query, setQuery] = useState('');
@@ -26,7 +26,7 @@ const ChatInterface = forwardRef(({ activeChatId }, ref) => {
 
         setLoading(true);
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/history/${chatId}`, {
+            const response = await api.get(`/history/${chatId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -74,7 +74,7 @@ const ChatInterface = forwardRef(({ activeChatId }, ref) => {
         }
 
         try {
-            const result = await axios.post('http://127.0.0.1:8000/chat', 
+            const result = await api.post('/chat', 
                 { query: userMessage.text, chat_id: activeChatId }, // Pass active Chat ID
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import illustration from '../assets/auth-illustration.png';
+import { api } from '../lib/api';
 
 const Signup = () => {
   const [username, setUsername] = useState('');
@@ -17,7 +17,7 @@ const Signup = () => {
     formData.append('password', password);
 
     try {
-      await axios.post('http://127.0.0.1:8000/signup', formData);
+      await api.post('/signup', formData);
       setMessage('Account created! Redirecting to login...');
       setTimeout(() => navigate('/login'), 1500);
     } catch (err) {

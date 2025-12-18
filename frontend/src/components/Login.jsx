@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import illustration from '../assets/auth-illustration.png';
+import { api } from '../lib/api';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -20,7 +20,7 @@ const Login = () => {
     formData.append('password', password);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/token', formData);
+      const response = await api.post('/token', formData);
       localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
     } catch (err) {

@@ -11,7 +11,8 @@ except ImportError:
     from database import get_user, create_user
 
 # Configuration
-SECRET_KEY = "SECRET_KEY_GOES_HERE_FOR_DEV_ONLY_CHANGE_IN_PROD" 
+# Option A (as requested): use env SECRET_KEY in production, but keep a dev fallback
+SECRET_KEY = os.environ.get("SECRET_KEY", "SECRET_KEY_GOES_HERE_FOR_DEV_ONLY_CHANGE_IN_PROD")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 300
 

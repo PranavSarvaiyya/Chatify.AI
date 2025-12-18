@@ -10,11 +10,11 @@ import {
   X,
   Trash2
 } from 'lucide-react';
-import axios from 'axios';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import SettingsModal from './SettingsModal';
 import UploadModal from './UploadModal';
+import { api } from '../lib/api';
 
 import logo from '../assets/logo.png';
 
@@ -29,7 +29,7 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen, onChatSelect }) => {
     if (!token) return;
 
     try {
-      const response = await axios.get('http://127.0.0.1:8000/history', {
+      const response = await api.get('/history', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setHistory(response.data);
@@ -53,7 +53,7 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen, onChatSelect }) => {
 
       const token = localStorage.getItem('token');
       try {
-          await axios.delete(`http://127.0.0.1:8000/history/${chatId}`, {
+          await api.delete(`/history/${chatId}`, {
               headers: { Authorization: `Bearer ${token}` }
           });
           fetchHistory(); // Refresh list

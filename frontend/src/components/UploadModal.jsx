@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { UploadCloud, FileText, X, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/api';
 
 const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
   if (!isOpen) return null;
@@ -34,7 +34,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/upload', formData, {
+      const response = await api.post('/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`

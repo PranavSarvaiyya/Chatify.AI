@@ -6,3 +6,6 @@ pypdf
 python-dotenv
 python-jose[cryptography]
 passlib[bcrypt]
+motor
+pymongo
+openai
