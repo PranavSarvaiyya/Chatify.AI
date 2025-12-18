@@ -19,7 +19,7 @@ try:
         get_password_hash,
         verify_password
     )
-    from backend.database import get_user, create_user, chats_collection
+    from backend.database import get_user, create_user, chats_collection, ping_db
 except ImportError:
     from rag_service import rag_service
     from auth import (
@@ -29,9 +29,15 @@ except ImportError:
         get_password_hash,
         verify_password
     )
-    from database import get_user, create_user, chats_collection
+    from database import get_user, create_user, chats_collection, ping_db
 
 app = FastAPI()
+
+# Startup: check Mongo connectivity and log clearly (helps diagnose Atlas issues on Render)
+@app.on_event("startup")
+async def _startup_checks():
+    ok = await ping_db()
+    print("✅ MongoDB connected" if ok else "❌ MongoDB NOT connected (check Render env MONGODB_URL / Atlas user / IP allowlist)")
 
 # CORS origins from env (comma-separated). Default keeps current dev behavior.
 _cors_origins_env = os.environ.get("CORS_ORIGINS", "*").strip()
@@ -96,7 +102,11 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @app.post("/signup")
 async def signup(form_data: OAuth2PasswordRequestForm = Depends()):
-    existing_user = await get_user(form_data.username)
+    try:
+        existing_user = await get_user(form_data.username)
+    except Exception as e:
+        print(f"❌ DB error on get_user during signup: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail="Database connection error")
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     
@@ -106,7 +116,11 @@ async def signup(form_data: OAuth2PasswordRequestForm = Depends()):
         "hashed_password": hashed_password,
         "created_at": datetime.utcnow()
     }
-    await create_user(user_data)
+    try:
+        await create_user(user_data)
+    except Exception as e:
+        print(f"❌ DB error on create_user during signup: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail="Database write error")
     return {"message": f"User {form_data.username} created successfully"}
 
 # --- HISTORY ROUTES ---
