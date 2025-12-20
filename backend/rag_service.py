@@ -17,8 +17,8 @@ sdk = Bytez(api_key)
 
 class RagService:
     def __init__(self):
-        # Bytez Model - using Gemini 1.5 Flash (stable)
-        self.model_name = "google/gemini-1.5-flash" 
+        # Bytez Model - using Gemini 1.5 Pro
+        self.model_name = "google/gemini-1.5-pro-latest" 
         self.chunks = []
 
     def chunk_text(self, text, chunk_size=1000, overlap=100):
