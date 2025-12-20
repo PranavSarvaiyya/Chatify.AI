@@ -23,8 +23,7 @@ else:
 class RagService:
     def __init__(self):
         # Using a reliable free model from OpenRouter
-        # Options: "google/gemini-flash-1.5-exp", "mistralai/mistral-7b-instruct", etc.
-        self.model_name = "google/gemini-flash-1.5-8b" 
+        self.model_name = "google/gemini-flash-1.5-8b:free" 
         self.chunks = []
 
     def chunk_text(self, text, chunk_size=1000, overlap=100):
