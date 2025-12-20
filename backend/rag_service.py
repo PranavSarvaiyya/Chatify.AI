@@ -17,8 +17,8 @@ sdk = Bytez(api_key)
 
 class RagService:
     def __init__(self):
-        # Bytez Model - using Gemini 2.5 Pro
-        self.model_name = "google/gemini-2.5-pro" 
+        # Bytez Model - using Gemini 1.5 Flash (stable)
+        self.model_name = "google/gemini-1.5-flash" 
         self.chunks = []
 
     def chunk_text(self, text, chunk_size=1000, overlap=100):
@@ -92,10 +92,13 @@ class RagService:
         for attempt in range(max_retries):
             try:
                 model = sdk.model(self.model_name)
-                output, error = model.run([
+                response = model.run([
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ])
+                
+                output = response.output
+                error = response.error
                 
                 if error:
                     raise Exception(f"Bytez API Error: {error}")
