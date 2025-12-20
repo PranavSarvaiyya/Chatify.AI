@@ -30,4 +30,10 @@ async def get_user(username: str):
     return await users_collection.find_one({"username": username})
 
 async def create_user(user_data: dict):
-    return await users_collection.insert_one(user_data)
+    try:
+        result = await users_collection.insert_one(user_data)
+        print(f"✅ User created: {user_data.get('username')}, inserted_id: {result.inserted_id}")
+        return result
+    except Exception as e:
+        print(f"❌ create_user exception: {type(e).__name__}: {e}")
+        raise
