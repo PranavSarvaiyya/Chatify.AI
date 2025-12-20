@@ -1,8 +1,9 @@
 {
-  "routes": [
+  "redirects": [
     {
-      "src": "^(?!/assets/).*",
-      "dest": "/index.html"
+      "source": "/*",
+      "destination": "/index.html",
+      "status": 200
     }
   ]
 }
