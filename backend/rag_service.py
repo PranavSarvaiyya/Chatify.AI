@@ -1,24 +1,30 @@
 import os
 import time
-from bytez import Bytez
+from openai import OpenAI
 from pypdf import PdfReader
 from dotenv import load_dotenv
 
+# Load env from parent directory
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'), override=True)
 
-api_key = os.environ.get("GOOGLE_API_KEY") # Bytez API Key
-if not api_key:
-    print("❌ Error: API Key not found")
-else:
-    print(f"✅ Loaded key: {api_key[:5]}...")
+# OpenRouter Configuration
+api_key = os.environ.get("OPENROUTER_API_KEY")
+client = None
 
-# Bytez SDK Configuration
-sdk = Bytez(api_key)
+if not api_key:
+    print("❌ Error: OPENROUTER_API_KEY not found in .env")
+else:
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
+    print(f"✅ OpenRouter Configured (Key starts with: {api_key[:10]}...)")
 
 class RagService:
     def __init__(self):
-        # Bytez Model - using Gemini 1.5 Pro
-        self.model_name = "google/gemini-1.5-pro-latest" 
+        # Using a reliable free model from OpenRouter
+        # Options: "google/gemini-flash-1.5-exp", "mistralai/mistral-7b-instruct", etc.
+        self.model_name = "google/gemini-flash-1.5-8b" 
         self.chunks = []
 
     def chunk_text(self, text, chunk_size=1000, overlap=100):
@@ -75,6 +81,9 @@ class RagService:
     def ask_question(self, query: str):
         if not self.chunks:
             return {"answer": "Please upload a document first."}
+        
+        if not client:
+            return {"answer": "API Key not configured properly."}
 
         relevant_chunks = self.find_relevant_chunks(query)
         context = "\n...\n".join(relevant_chunks)
@@ -91,21 +100,21 @@ class RagService:
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                model = sdk.model(self.model_name)
-                response = model.run([
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ])
+                completion = client.chat.completions.create(
+                    extra_headers={
+                        "HTTP-Referer": "http://localhost:3000", # Optional
+                        "X-Title": "Chatify.AI", # Optional
+                    },
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ]
+                )
                 
-                output = response.output
-                error = response.error
-                
-                if error:
-                    raise Exception(f"Bytez API Error: {error}")
-                
-                return {"answer": output}
+                return {"answer": completion.choices[0].message.content}
             except Exception as e:
-                print(f"AI Service Error: {e}")
+                print(f"OpenRouter Error: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(2)
                     continue
