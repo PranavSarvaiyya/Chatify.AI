@@ -1,27 +1,24 @@
 import os
 import time
-from openai import OpenAI
+from bytez import Bytez
 from pypdf import PdfReader
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'), override=True)
 
-api_key = os.environ.get("GOOGLE_API_KEY") # User calls it GOOGLE_API_KEY in env, but it's OpenRouter
+api_key = os.environ.get("GOOGLE_API_KEY") # Bytez API Key
 if not api_key:
     print("❌ Error: API Key not found")
 else:
     print(f"✅ Loaded key: {api_key[:5]}...")
 
-# OpenRouter / AI/ML Configuration
-client = OpenAI(
-  base_url="https://api.aimlapi.com/v1",
-  api_key=api_key,
-)
+# Bytez SDK Configuration
+sdk = Bytez(api_key)
 
 class RagService:
     def __init__(self):
-        # AI/ML API Model (Updated to supported model from error log)
-        self.model_name = "google/gemini-2.0-flash-exp" 
+        # Bytez Model - using Gemini 2.5 Pro
+        self.model_name = "google/gemini-2.5-pro" 
         self.chunks = []
 
     def chunk_text(self, text, chunk_size=1000, overlap=100):
@@ -94,16 +91,17 @@ class RagService:
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                completion = client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ]
-                )
-                return {"answer": completion.choices[0].message.content}
+                model = sdk.model(self.model_name)
+                output, error = model.run([
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ])
+                
+                if error:
+                    raise Exception(f"Bytez API Error: {error}")
+                
+                return {"answer": output}
             except Exception as e:
-
                 print(f"AI Service Error: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(2)
