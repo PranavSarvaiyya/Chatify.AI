@@ -7,23 +7,33 @@ from dotenv import load_dotenv
 # Load env from parent directory
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'), override=True)
 
-# OpenRouter Configuration
-api_key = os.environ.get("OPENROUTER_API_KEY")
-client = None
+# OpenRouter Configuration (Primary - Unlimited Credits)
+openrouter_api_key = os.environ.get("OPENROUTER_API_KEY")
+openrouter_client = None
 
-if not api_key:
+if not openrouter_api_key:
     print("❌ Error: OPENROUTER_API_KEY not found in .env")
 else:
-    client = OpenAI(
+    openrouter_client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
-        api_key=api_key,
+        api_key=openrouter_api_key,
     )
-    print(f"✅ OpenRouter Configured (Key starts with: {api_key[:10]}...)")
+    print(f"✅ OpenRouter Configured (Key starts with: {openrouter_api_key[:10]}...)")
 
 class RagService:
     def __init__(self):
-        # Using a reliable free model from OpenRouter
-        self.model_name = "meta-llama/llama-3.2-3b-instruct:free" 
+        # Multiple Free OpenRouter Models (All Free - Auto Fallback)
+        self.free_models = [
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "google/gemma-3n-e4b-it:free",
+            "mistralai/mistral-small-3.1-24b-instruct:free",
+            "z-ai/glm-4.5-air:free",
+            "meta-llama/llama-3.1-405b-instruct:free",
+            "google/gemini-flash-1.5:free",
+            "meta-llama/llama-3.1-8b-instruct:free",
+            "deepseek/deepseek-r1-0528:free",
+        ]
+        self.model_index = 0  # Start with first model
         self.chunks = []
 
     def chunk_text(self, text, chunk_size=1000, overlap=100):
@@ -81,8 +91,8 @@ class RagService:
         if not self.chunks:
             return {"answer": "Please upload a document first."}
         
-        if not client:
-            return {"answer": "API Key not configured properly."}
+        if not openrouter_client:
+            return {"answer": "API Key not configured. Please add OPENROUTER_API_KEY in .env file."}
 
         relevant_chunks = self.find_relevant_chunks(query)
         context = "\n...\n".join(relevant_chunks)
@@ -96,27 +106,67 @@ class RagService:
 
         user_prompt = f"CONTEXT:\n{context}\n\nQUESTION: {query}"
 
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                completion = client.chat.completions.create(
-                    extra_headers={
-                        "HTTP-Referer": "http://localhost:3000", # Optional
-                        "X-Title": "Chatify.AI", # Optional
-                    },
-                    model=self.model_name,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ]
-                )
-                
-                return {"answer": completion.choices[0].message.content}
-            except Exception as e:
-                print(f"OpenRouter Error: {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(2)
-                    continue
-                return {"answer": f"Error generating response: {str(e)}"}
+        # Try all free models with automatic fallback
+        max_model_attempts = len(self.free_models)
+        for model_attempt in range(max_model_attempts):
+            current_model = self.free_models[self.model_index]
+            
+            # Retry logic for each model
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    completion = openrouter_client.chat.completions.create(
+                        extra_headers={
+                            "HTTP-Referer": "http://localhost:3000",
+                            "X-Title": "Chatify.AI",
+                        },
+                        model=current_model,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ]
+                    )
+                    
+                    # Success! Reset to first model for next time
+                    self.model_index = 0
+                    print(f"✅ Response from {current_model}")
+                    return {"answer": completion.choices[0].message.content}
+                    
+                except Exception as e:
+                    error_str = str(e)
+                    print(f"⚠️ Error (Model: {current_model}, Attempt: {attempt+1}): {e}")
+                    
+                    # Check if it's a 429 rate limit error
+                    if "429" in error_str or "rate" in error_str.lower() or "rate-limited" in error_str.lower():
+                        # If last retry for this model, try next model immediately
+                        if attempt == max_retries - 1:
+                            print(f"🔄 Model {current_model} rate-limited, switching to next model...")
+                            # Move to next model
+                            self.model_index = (self.model_index + 1) % len(self.free_models)
+                            time.sleep(1)  # Short wait before trying next model
+                            break  # Break retry loop, try next model
+                        else:
+                            # Wait before retrying same model
+                            wait_time = min((2 ** attempt) + 1, 5)  # Max 5 seconds
+                            print(f"⏳ Rate limited, waiting {wait_time} seconds before retry...")
+                            time.sleep(wait_time)
+                            continue
+                    else:
+                        # Other errors - retry with delay
+                        if attempt < max_retries - 1:
+                            time.sleep(2)
+                            continue
+                        # If last retry, try next model
+                        if model_attempt < max_model_attempts - 1:
+                            print(f"🔄 Model {current_model} failed, trying next model...")
+                            self.model_index = (self.model_index + 1) % len(self.free_models)
+                            time.sleep(1)
+                            break
+            
+            # If we've tried all models, return helpful error
+            if model_attempt == max_model_attempts - 1:
+                return {"answer": "Sorry, all free models are currently rate-limited. Please wait 5-10 minutes and try again, or check your OpenRouter account limits."}
+        
+        return {"answer": "Error: Unable to generate response. Please try again."}
 
 rag_service = RagService()
