@@ -190,4 +190,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 **Pranav Sarvaiyya**  
 - **GitHub**: [@PranavSarvaiyya](https://github.com/PranavSarvaiyya)  
-- **Project Link**: [Chatify.AI](https://github.com/PranavSarvaiyya/Chatify.AI)
+- **Project Link**: [Chatify.AI](https://chatify-ai-frontend.onrender.com/)
