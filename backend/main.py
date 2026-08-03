@@ -5,26 +5,23 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import timedelta, datetime
 from bson import ObjectId
-
-# Env helpers
 import os
 
-# Handle imports whether running directly or as module
 try:
-    from backend.rag_service import rag_service
+    from backend.rag_service import RagService
     from backend.auth import (
-        create_access_token, 
-        get_current_user, 
+        create_access_token,
+        get_current_user,
         ACCESS_TOKEN_EXPIRE_MINUTES,
         get_password_hash,
         verify_password
     )
     from backend.database import get_user, create_user, chats_collection, ping_db
 except ImportError:
-    from rag_service import rag_service
+    from rag_service import RagService
     from auth import (
-        create_access_token, 
-        get_current_user, 
+        create_access_token,
+        get_current_user,
         ACCESS_TOKEN_EXPIRE_MINUTES,
         get_password_hash,
         verify_password
@@ -33,11 +30,8 @@ except ImportError:
 
 app = FastAPI()
 
-# Startup: check Mongo connectivity and log clearly (helps diagnose Atlas issues on Render)
-@app.on_event("startup")
-async def _startup_checks():
-    ok = await ping_db()
-    print("✅ MongoDB connected" if ok else "❌ MongoDB NOT connected (check Render env MONGODB_URL / Atlas user / IP allowlist)")
+# Global RAG Instance
+rag = RagService()
 
 # CORS origins from env (comma-separated). Default keeps current dev behavior.
 _cors_origins_env = os.environ.get("CORS_ORIGINS", "*").strip()
@@ -46,7 +40,7 @@ if _cors_origins_env == "*" or _cors_origins_env == "":
 else:
     ALLOW_ORIGINS = [o.strip().rstrip("/") for o in _cors_origins_env.split(",") if o.strip()]
 
-# Input Models
+# Input / Output Models
 class QueryRequest(BaseModel):
     query: str
     chat_id: Optional[str] = None
@@ -60,7 +54,7 @@ class ChatHistoryItem(BaseModel):
     title: str
     created_at: str
 
-# CORS
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOW_ORIGINS,
@@ -69,16 +63,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+async def _startup_checks():
+    ok = await ping_db()
+    print("✅ MongoDB connected" if ok else "❌ MongoDB NOT connected (check Render env MONGODB_URL / Atlas user / IP allowlist)")
+
 @app.get("/")
 def read_root():
     return {"message": "ChatWithData API is running with MongoDB 🍃"}
 
-# Render and some proxies may send HEAD / for health checks
 @app.head("/")
 def head_root():
     return Response(status_code=200)
 
-# Browsers often request this; returning 204 avoids noisy 404s in DevTools
 @app.get("/favicon.ico")
 def favicon():
     return Response(status_code=204)
@@ -147,10 +144,9 @@ async def get_chat_messages(chat_id: str, current_user: dict = Depends(get_curre
         if not chat:
             raise HTTPException(status_code=404, detail="Chat not found")
         
-        # Convert _id to str for JSON serialization
         chat['id'] = str(chat['_id'])
         del chat['_id']
-        del chat['user_id'] # Don't expose user_id
+        del chat['user_id']
         return chat
     except Exception as e:
         print(f"Error fetching chat: {e}")
@@ -166,33 +162,87 @@ async def delete_chat(chat_id: str, current_user: dict = Depends(get_current_use
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid Chat ID")
 
-# --- PROTECTED ROUTES ---
+class URLRequest(BaseModel):
+    url: str
+
+# --- PROTECTED RAG ROUTES ---
+@app.post("/upload-url")
+async def upload_url(
+    request: URLRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    url = request.url.strip()
+    if not url.startswith("http://") and not url.startswith("https://"):
+        raise HTTPException(status_code=400, detail="Invalid URL. Must start with http:// or https://")
+
+    # Deduplication check
+    existing_chat = await chats_collection.find_one({
+        "user_id": current_user['_id'],
+        "title": url
+    })
+
+    if existing_chat:
+        return {
+            "chat_id": str(existing_chat['_id']),
+            "message": "Opened existing chat for this URL",
+            "details": "Using cached version"
+        }
+
+    try:
+        rag.add_document(url, "url")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing Web URL: {str(e)}")
+
+    new_chat = {
+        "user_id": current_user['_id'],
+        "title": url,
+        "created_at": datetime.utcnow(),
+        "messages": [],
+        "filename": url
+    }
+    result = await chats_collection.insert_one(new_chat)
+
+    return {
+        "chat_id": str(result.inserted_id),
+        "message": f"Web page '{url}' successfully processed!"
+    }
+
 @app.post("/upload")
 async def upload_document(
     file: UploadFile = File(...), 
     current_user: dict = Depends(get_current_user)
 ):
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
-    
-    content = await file.read()
-    
-    # Deduplication: Check if chat already exists for this file
+    file_ext = file.filename.split(".")[-1].lower()
+
+    # Deduplication check in MongoDB
     existing_chat = await chats_collection.find_one({
         "user_id": current_user['_id'],
         "title": file.filename
     })
 
     if existing_chat:
-        # If exists, switch to it without re-processing
-        chat_id = str(existing_chat['_id'])
         return {
-            "chat_id": chat_id,
+            "chat_id": str(existing_chat['_id']),
             "message": "Opened existing chat for this file",
             "details": "Using cached version"
         }
 
-    # Create new chat session if not exists
+    # Temporary file save for RAG Document Loader
+    temp_path = f"./temp_{file.filename}"
+    with open(temp_path, "wb") as f:
+        f.write(await file.read())
+    
+    try:
+        rag.add_document(temp_path, file_ext)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    # Save new chat session in MongoDB
     new_chat = {
         "user_id": current_user['_id'],
         "title": file.filename,
@@ -201,15 +251,10 @@ async def upload_document(
         "filename": file.filename
     }
     result = await chats_collection.insert_one(new_chat)
-    chat_id = str(result.inserted_id)
 
-    # Process file (RAG)
-    rag_result = await rag_service.ingest_file(content, file.filename)
-    
     return {
-        "chat_id": chat_id,
-        "message": "File processed and new chat created",
-        "details": rag_result
+        "chat_id": str(result.inserted_id),
+        "message": f"Document '{file.filename}' successfully uploaded and processed!"
     }
 
 @app.post("/chat")
@@ -217,11 +262,11 @@ async def chat(
     request: QueryRequest, 
     current_user: dict = Depends(get_current_user)
 ):
-    # Get answer from AI
-    answer = rag_service.ask_question(request.query)
-    ai_response = answer.get("answer", "Error")
+    # Query AI using RAGService instance
+    response = rag.query(request.query)
+    ai_response = response.get("Answer", "Sorry, I can't answer that right now.")
 
-    # Update Chat History if chat_id is provided
+    # Save to MongoDB history if chat_id provided
     if request.chat_id:
         await chats_collection.update_one(
             {"_id": ObjectId(request.chat_id)},
@@ -230,7 +275,7 @@ async def chat(
                 {"role": "bot", "text": ai_response}
             ]}}}
         )
-    
+
     return {"answer": ai_response}
 
 if __name__ == "__main__":

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } f
 import { Send, Sparkles, User, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import ReactMarkdown from 'react-markdown';
+
 
 const ChatInterface = forwardRef(({ activeChatId }, ref) => {
     const [query, setQuery] = useState('');
@@ -133,7 +135,7 @@ const ChatInterface = forwardRef(({ activeChatId }, ref) => {
                                 ? 'bg-black text-white rounded-tr-sm' 
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-sm'
                             }`}>
-                                {msg.text}
+                               <ReactMarkdown>{msg.text}</ReactMarkdown>
                             </div>
                         </div>
                     ))}

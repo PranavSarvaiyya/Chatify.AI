@@ -69,7 +69,7 @@ const FileUpload = ({ onUploadSuccess }) => {
         <input 
           type="file" 
           id="file-upload"
-          accept=".pdf"
+          accept=".pdf,.docx,.doc,.txt,.csv"
           onChange={handleFileChange} 
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
@@ -80,7 +80,7 @@ const FileUpload = ({ onUploadSuccess }) => {
                     <FileText className="w-6 h-6 text-slate-400 group-hover:text-indigo-500" />
                 </div>
                 <div>
-                    <span className="text-indigo-600 font-semibold block">Click to upload PDF</span>
+                    <span className="text-indigo-600 font-semibold block">Click to upload file (PDF, DOCX, TXT, CSV)</span>
                     <span className="text-slate-400 text-xs">or drag and drop</span>
                 </div>
             </div>

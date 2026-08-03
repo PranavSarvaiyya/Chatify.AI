@@ -1,14 +1,37 @@
+# Core Web Framework & Server
 fastapi
 uvicorn
 python-multipart
-google-generativeai
-pypdf
 python-dotenv
+pydantic
+
+# Database & Auth
+motor
+pymongo
+dnspython
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt==4.0.1
-motor
-pymongo
+
+# AI LLM Services
+google-generativeai
 openai
-dnspython
 bytez
+langchain-mistralai
+
+# LangChain & RAG Stack
+langchain
+langchain-community
+langchain-core
+langchain-text-splitters
+langchain-huggingface
+langchain-chroma
+sentence-transformers
+chromadb
+
+# Document Loaders & Utilities
+pypdf
+python-docx
+docx2txt
+beautifulsoup4
+requests
