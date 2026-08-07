@@ -4,7 +4,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MONGODB_URL = os.environ.get("MONGODB_URL", "mongodb://localhost:27017")
+env_url = os.environ.get("MONGODB_URL", "").strip()
+
+# Auto-detect Docker environment: replace localhost with docker container hostname 'mongodb'
+if os.path.exists("/.dockerenv") and (not env_url or "localhost" in env_url or "127.0.0.1" in env_url):
+    MONGODB_URL = "mongodb://mongodb:27017"
+else:
+    MONGODB_URL = env_url if env_url else "mongodb://localhost:27017"
 
 # Keep a short server selection timeout so connection issues fail fast (useful on Render)
 client = AsyncIOMotorClient(MONGODB_URL, serverSelectionTimeoutMS=5000)

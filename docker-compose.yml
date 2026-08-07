@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: chatwithdata-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chatwithdata-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=${MONGODB_URL:-mongodb://mongodb:27017}
+    env_file:
+      - .env
+    volumes:
+      - ./backend/Vector_Database:/app/Vector_Database
+      - ./backend/chroma_db:/app/chroma_db
+    depends_on:
+      - mongodb
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: chatwithdata-frontend
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  mongo-data:

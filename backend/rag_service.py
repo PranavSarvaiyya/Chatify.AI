@@ -31,7 +31,9 @@ class RagService:
                 "lambda_mult": 0.5
             }
         )
+        mistral_key = os.environ.get("MISTRAL_API_KEY") or os.environ.get("MISTRALAI_API_KEY")
         self.llm = ChatMistralAI(
+            api_key=mistral_key,
             model_name="mistral-small-latest",
             temperature=0.7,
             max_tokens=1000,
@@ -72,19 +74,31 @@ class RagService:
         except KeyError:
             raise ValueError(f"Unsupported file type: {file_type}. Supported types are: {list(self.get_supported_formats().keys())}")
     
-    def add_document(self, file_path: str, file_type: str):
+    def add_document(self, file_path: str, file_type: str, doc_id: str = None):
         try:
             document = self.load_document(file_path, file_type)
             chunks = self.text_splitter.split_documents(document)
+            if doc_id:
+                for chunk in chunks:
+                    chunk.metadata["doc_id"] = str(doc_id)
             self.vectorstore.add_documents(chunks)
-            print(f"Document added successfully: {file_path}")
+            print(f"Document added successfully with doc_id '{doc_id}': {file_path}")
         except ValueError as e:
             print(f"Error adding document: {e}")
+            raise e
         except Exception as e:
             print(f"Error adding document: {e}")
+            raise e
 
-    def query(self, query: str):
-        docs = self.retriever.invoke(query)
+    def query(self, query: str, doc_id: str = None):
+        if doc_id:
+            docs = self.vectorstore.similarity_search(query, k=4, filter={"doc_id": str(doc_id)})
+            # Fallback to similarity search across all docs if no chunks found for specific doc_id
+            if not docs:
+                docs = self.retriever.invoke(query)
+        else:
+            docs = self.retriever.invoke(query)
+
         context = "\n\n".join([d.page_content for d in docs])
         final_prompt = self.prompt_template.invoke({
             "context": context,

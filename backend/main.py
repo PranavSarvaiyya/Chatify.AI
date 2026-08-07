@@ -201,9 +201,16 @@ async def upload_url(
         "filename": url
     }
     result = await chats_collection.insert_one(new_chat)
+    chat_id = str(result.inserted_id)
+
+    try:
+        rag.add_document(url, "url", doc_id=chat_id)
+    except Exception as e:
+        await chats_collection.delete_one({"_id": result.inserted_id})
+        raise HTTPException(status_code=500, detail=f"Error processing Web URL: {str(e)}")
 
     return {
-        "chat_id": str(result.inserted_id),
+        "chat_id": chat_id,
         "message": f"Web page '{url}' successfully processed!"
     }
 
@@ -227,22 +234,7 @@ async def upload_document(
             "details": "Using cached version"
         }
 
-    # Temporary file save for RAG Document Loader
-    temp_path = f"./temp_{file.filename}"
-    with open(temp_path, "wb") as f:
-        f.write(await file.read())
-    
-    try:
-        rag.add_document(temp_path, file_ext)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-
-    # Save new chat session in MongoDB
+    # Save new chat session in MongoDB to obtain chat_id
     new_chat = {
         "user_id": current_user['_id'],
         "title": file.filename,
@@ -251,9 +243,27 @@ async def upload_document(
         "filename": file.filename
     }
     result = await chats_collection.insert_one(new_chat)
+    chat_id = str(result.inserted_id)
+
+    # Temporary file save for RAG Document Loader
+    temp_path = f"./temp_{file.filename}"
+    with open(temp_path, "wb") as f:
+        f.write(await file.read())
+    
+    try:
+        rag.add_document(temp_path, file_ext, doc_id=chat_id)
+    except ValueError as e:
+        await chats_collection.delete_one({"_id": result.inserted_id})
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        await chats_collection.delete_one({"_id": result.inserted_id})
+        raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
     return {
-        "chat_id": str(result.inserted_id),
+        "chat_id": chat_id,
         "message": f"Document '{file.filename}' successfully uploaded and processed!"
     }
 
@@ -262,19 +272,29 @@ async def chat(
     request: QueryRequest, 
     current_user: dict = Depends(get_current_user)
 ):
-    # Query AI using RAGService instance
-    response = rag.query(request.query)
-    ai_response = response.get("Answer", "Sorry, I can't answer that right now.")
+    if not request.query or not request.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
 
-    # Save to MongoDB history if chat_id provided
-    if request.chat_id:
-        await chats_collection.update_one(
-            {"_id": ObjectId(request.chat_id)},
-            {"$push": {"messages": {"$each": [
-                {"role": "user", "text": request.query},
-                {"role": "bot", "text": ai_response}
-            ]}}}
-        )
+    # Query AI using RAGService instance with document filtering
+    try:
+        response = rag.query(request.query, doc_id=request.chat_id)
+        ai_response = response.get("Answer", "Sorry, I couldn't generate an answer.")
+    except Exception as e:
+        print(f"❌ RAG Query Error: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail=f"AI Model Error: {str(e)}")
+
+    # Save to MongoDB history if valid chat_id provided
+    if request.chat_id and request.chat_id.strip():
+        try:
+            await chats_collection.update_one(
+                {"_id": ObjectId(request.chat_id), "user_id": current_user['_id']},
+                {"$push": {"messages": {"$each": [
+                    {"role": "user", "text": request.query},
+                    {"role": "bot", "text": ai_response}
+                ]}}}
+            )
+        except Exception as e:
+            print(f"⚠️ Could not update chat history: {e}")
 
     return {"answer": ai_response}
 
