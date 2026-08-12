@@ -9,3 +9,5 @@ build/
 .DS_Store
 backend/__pycache__/
 frontend/.vite/
+*.pem
+ChatifyAI-machine-Key.pem

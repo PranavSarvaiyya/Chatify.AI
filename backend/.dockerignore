@@ -6,3 +6,7 @@ __pycache__
 *.pyd
 .git
 .gitignore
+*.pom
+*.env
+*.pem
+ChatifyAI-machine-Key.pem
