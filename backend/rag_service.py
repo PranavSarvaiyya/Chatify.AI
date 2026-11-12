@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, CSVLoader, WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_mistralai import ChatMistralAI
+from langchain_groq import ChatGroq
 from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -31,10 +31,10 @@ class RagService:
                 "lambda_mult": 0.5
             }
         )
-        mistral_key = os.environ.get("MISTRAL_API_KEY") or os.environ.get("MISTRALAI_API_KEY")
-        self.llm = ChatMistralAI(
-            api_key=mistral_key,
-            model_name="mistral-small-latest",
+        groq_api_key = os.environ.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY")
+        self.llm = ChatGroq(
+            api_key=groq_api_key,
+            model_name="llama-3.3-70b-versatile",
             temperature=0.7,
             max_tokens=1000,
             top_p=0.9

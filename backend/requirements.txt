@@ -28,6 +28,7 @@ langchain-huggingface
 langchain-chroma
 sentence-transformers
 chromadb
+langchain_groq
 
 # Document Loaders & Utilities
 pypdf
