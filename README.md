@@ -65,7 +65,7 @@ graph TD
 | Domain | Technology | Description |
 | :--- | :--- | :--- |
 | **Backend** | Python 3.11+, FastAPI, Uvicorn | High-performance async REST APIs |
-| **GenAI & RAG** | LangChain, HuggingFace, Mistral AI | LLM orchestration and retrieval pipeline |
+| **GenAI & RAG** | LangChain, HuggingFace, Groq AI | LLM orchestration and retrieval pipeline |
 | **Vector DB** | ChromaDB | Persistent local vector store with MMR retrieval |
 | **Database** | MongoDB Atlas, Motor | Async MongoDB client for users & history |
 | **Frontend** | React 18, Vite, Tailwind CSS | Responsive, modern web interface |
@@ -133,9 +133,7 @@ pip install -r requirements.txt
 # Run FastAPI Server
 uvicorn main:app --reload
 ```
-Server running at: `http://127.0.0.1:8000`  
-Swagger API Docs available at: `http://127.0.0.1:8000/docs`
-
+Server running at: `http://127.0.0.1:8000`
 ---
 
 ### 3. Frontend Setup
@@ -158,10 +156,10 @@ Frontend running at: `http://localhost:5173`
 
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/signup` | Create a new user account | ❌ No |
-| `POST` | `/token` | Login and receive JWT access token | ❌ No |
+| `POST` | `/signup` | Create a new user account | ✅ Yes |
+| `POST` | `/token` | Login and receive JWT access token | ✅ Yes |
 | `POST` | `/upload` | Ingest PDF, DOCX, TXT, or CSV document | ✅ Yes |
-| `POST` | `/upload-url` | Ingest a live public Web Page URL | ✅ Yes |
+| `POST` | `/upload-url` | Ingest a live public Web Page URL and Web Links | ✅ Yes |
 | `POST` | `/chat` | Query the RAG system and update chat history | ✅ Yes |
 | `GET` | `/history` | Fetch user's chat sessions history | ✅ Yes |
 | `GET` | `/history/{chat_id}` | Fetch specific chat session messages | ✅ Yes |
