@@ -34,7 +34,7 @@ class RagService:
         groq_api_key = os.environ.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY")
         self.llm = ChatGroq(
             api_key=groq_api_key,
-            model_name="llama-3.1-8b-instant",
+            model_name="qwen/qwen3.8-27b",
             temperature=0.7,
             max_tokens=1000,
             top_p=0.9
